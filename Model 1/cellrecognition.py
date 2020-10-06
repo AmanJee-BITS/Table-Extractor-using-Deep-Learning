@@ -13,7 +13,7 @@ from PIL import Image
 import pytesseract
 
 #read your file
-file = r'/home/aman/Desktop/codes/table_extr/t1.jpeg'
+file = r'/Users/amanjee/Desktop/Ps2/Table-Extractor-using-Deep-Learning-master/Test_images/tc11.jpg'
 img = cv2.imread(file,0)
 img.shape
 
