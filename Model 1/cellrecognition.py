@@ -13,7 +13,7 @@ from PIL import Image
 import pytesseract
 
 #read your file
-file = r'/Users/amanjee/Desktop/Ps2/Table-Extractor-using-Deep-Learning-master/Test_images/tc11.jpg'
+file = r'/Users/amanjee/Desktop/Ps2/Table-Extractor-using-Deep-Learning-master/Test_images/t3.jpg'
 img = cv2.imread(file,0)
 img.shape
 
@@ -22,10 +22,10 @@ thresh,img_bin = cv2.threshold(img,128,255,cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
 #inverting the image 
 img_bin = 255-img_bin
-cv2.imwrite('/home/aman/Desktop/codes/table_extr/cv_inverted.png',img_bin)
+cv2.imwrite('/Users/amanjee/Desktop/Ps2/Table-Extractor-using-Deep-Learning-master/Model_1/tests/cv_inverted.png',img_bin)
 #Plotting the image to see the output
 plotting = plt.imshow(img_bin,cmap='gray')
-plt.show()
+# plt.show()
 
 # countcol(width) of kernel as 100th of total widt
 kernel_len = np.array(img).shape[1]//100
@@ -39,34 +39,34 @@ kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 #Use vertical kernel to detect and save the vertical lines in a jpg
 image_1 = cv2.erode(img_bin, ver_kernel, iterations=3)
 vertical_lines = cv2.dilate(image_1, ver_kernel, iterations=3)
-cv2.imwrite("/home/aman/Desktop/codes/table_extr/vertical.jpg",vertical_lines)
+cv2.imwrite("/Users/amanjee/Desktop/Ps2/Table-Extractor-using-Deep-Learning-master/Model_1/tests/vertical.jpg",vertical_lines)
 #Plot the generated image
 plotting = plt.imshow(image_1,cmap='gray')
-plt.show()
+# plt.show()
 
 #Use horizontal kernel to detect and save the horizontal lines in a jpg
 image_2 = cv2.erode(img_bin, hor_kernel, iterations=3)
 horizontal_lines = cv2.dilate(image_2, hor_kernel, iterations=3)
-cv2.imwrite("/home/aman/Desktop/codes/table_extr/horizontal.jpg",horizontal_lines)
+cv2.imwrite("/Users/amanjee/Desktop/Ps2/Table-Extractor-using-Deep-Learning-master/Model_1/tests/horizontal.jpg",horizontal_lines)
 #Plot the generated image
 plotting = plt.imshow(image_2,cmap='gray')
-plt.show()
+# plt.show()
 
 # Combine horizontal and vertical lines in a new third image, with both having same weight.
 img_vh = cv2.addWeighted(vertical_lines, 0.5, horizontal_lines, 0.5, 0.0)
 #Eroding and thesholding the image
 img_vh = cv2.erode(~img_vh, kernel, iterations=2)
 thresh, img_vh = cv2.threshold(img_vh,128,255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-cv2.imwrite("/home/aman/Desktop/codes/table_extr/img_vh.jpg", img_vh)
+cv2.imwrite("/Users/amanjee/Desktop/Ps2/Table-Extractor-using-Deep-Learning-master/Model_1/tests/img_vh.jpg", img_vh)
 bitxor = cv2.bitwise_xor(img,img_vh)
 bitnot = cv2.bitwise_not(bitxor)
 #Plotting the generated image
 plotting = plt.imshow(bitnot,cmap='gray')
-plt.show()
+# plt.show()
 
 # Detect contours for following box detection
 #contours, hierarchy = cv2.findContours(img_vh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
-_, contours, _= cv2.findContours(img_vh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+contours, _= cv2.findContours(img_vh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
 def sort_contours(cnts, method="left-to-right"):
     # initialize the reverse flag and sort index
@@ -98,15 +98,17 @@ mean = np.mean(heights)
 
 #Create list box to store all boxes in  
 box = []
+
 # Get position (x,y), width and height for every contour and show the contour on image
 for c in contours:
     x, y, w, h = cv2.boundingRect(c)
     if (w<1000 and h<500):
         image = cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
         box.append([x,y,w,h])
+print('Table found\n')
         
 plotting = plt.imshow(image,cmap='gray')
-plt.show()
+# plt.show()
 
 #Creating two lists to define row and column in which cell is located
 row=[]
@@ -134,8 +136,9 @@ for i in range(len(box)):
             previous = box[i]
             column.append(box[i])
             
-print(column)
-print(row)
+# print(column)
+# print(row)
+print('Extracting from table...\n')
 
 #calculating maximum number of cells
 countcol = 0
@@ -149,7 +152,8 @@ center = [int(row[i][j][0]+row[i][j][2]/2) for j in range(len(row[i])) if row[0]
 
 center=np.array(center)
 center.sort()
-print(center)
+#print(center)
+
 #Regarding the distance to the columns center, the boxes are arranged in respective order
 
 finalboxes = []
@@ -182,7 +186,9 @@ for i in range(len(finalboxes)):
                 dilation = cv2.dilate(resizing, kernel,iterations=1)
                 erosion = cv2.erode(dilation, kernel,iterations=2)
                 
-                out = pytesseract.image_to_string(erosion)
+                out = pytesseract.image_to_string(erosion)[:-2]
+                out = out.replace('\n', ' ')
+
                 if(len(out)==0):
                     out = pytesseract.image_to_string(erosion, config='--psm 3')
                 inner = inner +" "+ out
@@ -195,7 +201,7 @@ print(dataframe)
 data = dataframe.style.set_properties(align="left")
 #Converting it in a excel-file
 #dataframe.to_excel(r'/home/aman/Desktop/codes/table_extr/output.xlsx', index= False)
-writer = pd.ExcelWriter('/home/aman/Desktop/codes/table_extr/out.xlsx',
+writer = pd.ExcelWriter('/Users/amanjee/Desktop/Ps2/Table-Extractor-using-Deep-Learning-master/Model_1/out.xlsx',
                         engine='xlsxwriter')
 data.to_excel(writer)
 
